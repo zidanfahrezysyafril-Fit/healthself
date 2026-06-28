@@ -83,8 +83,14 @@ class ChatController extends Controller
             |--------------------------------------------------------------------------
             */
 
+            $pythonPath = base_path('python/venv/bin/python');
+            if (!file_exists($pythonPath)) {
+                // Fallback for Windows local development
+                $pythonPath = 'C:\\Users\\Pongo\\AppData\\Local\\Programs\\Python\\Python311\\python.exe';
+            }
+
             $process = new Process([
-                'C:\\Users\\Pongo\\AppData\\Local\\Programs\\Python\\Python311\\python.exe',
+                $pythonPath,
                 base_path('python/search.py'),
                 $messageForSearch
             ]);

@@ -168,7 +168,7 @@
                             @endif
 
                             <div class="dropdown-divider"></div>
-                            <form method="POST" action="{{ route('logout') }}" style="margin:0;">
+                            <form method="POST" action="{{ route('logout') }}" style="margin:0;" onsubmit="sessionStorage.clear();">
                                 @csrf
                                 <button type="submit" class="dropdown-item danger font-bold">⏻ Keluar</button>
                             </form>
@@ -210,7 +210,7 @@
                         <a href="{{ route('konselor.dashboard') }}" class="text-center bg-[#EEF2FF] text-[#4F46E5] px-5 py-2.5 rounded-full font-bold">Panel Konselor</a>
                     @endif
                     <a href="{{ route('mahasiswa.profile') }}" class="text-center border border-gray-200 text-gray-700 px-5 py-2.5 rounded-full font-bold">Profil Saya</a>
-                    <form method="POST" action="{{ route('logout') }}" style="margin:0; width:100%;">
+                    <form method="POST" action="{{ route('logout') }}" style="margin:0; width:100%;" onsubmit="sessionStorage.clear();">
                         @csrf
                         <button type="submit" class="w-full text-center bg-red-50 text-red-600 px-5 py-2.5 rounded-full font-bold">Keluar</button>
                     </form>
@@ -601,6 +601,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
+                            'Accept': 'application/json',
                             'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         },
                         body: JSON.stringify({ message })
@@ -626,6 +627,7 @@
                     saveChatHistory();
 
                 } catch (e) {
+                    console.error("Chat Error:", e);
                     const loading = document.getElementById('loading');
                     if (loading) loading.remove();
                     chatContent.innerHTML += `
