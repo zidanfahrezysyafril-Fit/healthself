@@ -12,7 +12,6 @@ Route::prefix('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 });
 
-Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
     
     // Dashboard Endpoints
@@ -23,4 +22,3 @@ Route::middleware('auth:sanctum')->group(function () {
     // Article Endpoints
     Route::get('/articles', [ArticleController::class, 'index']);
     Route::get('/articles/{slug}', [ArticleController::class, 'show']);
-});
