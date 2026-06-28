@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\ChatController;
+use App\Http\Controllers\Api\MoodController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -22,3 +24,12 @@ Route::prefix('auth')->group(function () {
     // Article Endpoints
     Route::get('/articles', [ArticleController::class, 'index']);
     Route::get('/articles/{slug}', [ArticleController::class, 'show']);
+
+    // Chat Endpoints
+    Route::get('/chat/history', [ChatController::class, 'history']);
+    Route::post('/chat/send', [ChatController::class, 'send']);
+
+    // Mood Endpoints
+    Route::get('/moods', [MoodController::class, 'index']);
+    Route::post('/moods', [MoodController::class, 'store']);
+    Route::get('/moods/statistics', [MoodController::class, 'statistics']);
