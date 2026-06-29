@@ -7,6 +7,8 @@ use App\Repositories\Contracts\MoodRepositoryInterface;
 use App\Repositories\Eloquent\MoodRepository;
 use App\Repositories\Contracts\ArticleRepositoryInterface;
 use App\Repositories\Eloquent\ArticleRepository;
+use App\Repositories\Contracts\ProfileRepositoryInterface;
+use App\Repositories\Eloquent\ProfileRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(MoodRepositoryInterface::class, MoodRepository::class);
         $this->app->bind(ArticleRepositoryInterface::class, ArticleRepository::class);
+        $this->app->bind(ProfileRepositoryInterface::class, ProfileRepository::class);
     }
 
     /**

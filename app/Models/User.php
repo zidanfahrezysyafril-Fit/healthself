@@ -60,6 +60,11 @@ class User extends Authenticatable
         return $this->hasMany(Artikel::class, 'id_user');
     }
 
+    public function moods()
+    {
+        return $this->hasMany(Mood::class, 'user_id');
+    }
+
     public function artikelDivalidasi()
     {
         return $this->hasMany(Artikel::class, 'id_konselor');

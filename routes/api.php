@@ -39,6 +39,8 @@ Route::get('/moods/statistics', [\App\Http\Controllers\Api\MoodController::class
 Route::apiResource('moods', \App\Http\Controllers\Api\MoodController::class);
     
     // Profile Endpoints
-    Route::get('/profile', [ProfileController::class, 'index']);
-    Route::put('/profile', [ProfileController::class, 'update']);
-    Route::post('/change-password', [ProfileController::class, 'changePassword']);
+    Route::get('/profile', [\App\Http\Controllers\Api\ProfileController::class, 'index']);
+    Route::put('/profile', [\App\Http\Controllers\Api\ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [\App\Http\Controllers\Api\ProfileController::class, 'updateAvatar']);
+    Route::delete('/profile/avatar', [\App\Http\Controllers\Api\ProfileController::class, 'deleteAvatar']);
+    Route::post('/change-password', [\App\Http\Controllers\Api\ProfileController::class, 'changePassword']);
