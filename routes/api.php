@@ -10,15 +10,17 @@ use App\Http\Controllers\Api\MoodController;
 use App\Http\Controllers\Api\ProfileController;
 
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+    Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
+    Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']);
+    
+    // Protected Auth Endpoints
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
+        Route::post('/logout-all', [\App\Http\Controllers\Api\AuthController::class, 'logoutAll']);
+    });
 });
 
-    Route::get('/profile', [AuthController::class, 'profile']);
-    
-    // Dashboard Endpoints
-   // Dashboard
+    // Dashboard
     Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardController::class, 'index']);
 
     // Article Endpoints

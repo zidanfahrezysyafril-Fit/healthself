@@ -3,72 +3,80 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Services\AuthService;
+use App\Http\Requests\Api\LoginRequest;
+use App\Http\Requests\Api\RegisterRequest;
+use App\Http\Resources\Api\ProfileResource;
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    protected $authService;
+
+    public function __construct(AuthService $authService)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'email' => ['Kredensial yang diberikan tidak cocok dengan catatan kami.'],
-            ]);
-        }
-
-        $token = $user->createToken('auth_token')->plainTextToken;
-
-        return response()->json([
-            'access_token' => $token,
-            'user' => $user,
-        ]);
+        $this->authService = $authService;
     }
 
-    public function register(Request $request)
+    public function login(LoginRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+        try {
+            $data = $this->authService->login(
+                $request->only(['email', 'password']),
+                $request->ip(),
+                $request->userAgent() ?? 'Unknown',
+                $request->throttleKey(),
+                $request->boolean('remember_me')
+            );
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'mahasiswa', // Default for mobile app
-        ]);
+            return ApiResponse::success([
+                'access_token' => $data['access_token'],
+                'user' => new ProfileResource($data['user']),
+            ], 'Login berhasil.');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return ApiResponse::error($e->getMessage(), 401);
+        } catch (\Exception $e) {
+            Log::error('Login error: ' . $e->getMessage());
+            return ApiResponse::error('Terjadi kesalahan saat login.', 500);
+        }
+    }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+    public function register(RegisterRequest $request)
+    {
+        try {
+            $data = $this->authService->register($request->validated());
 
-        return response()->json([
-            'access_token' => $token,
-            'user' => $user,
-        ]);
+            return ApiResponse::success([
+                'access_token' => $data['access_token'],
+                'user' => new ProfileResource($data['user']),
+            ], 'Registrasi berhasil.', 201);
+        } catch (\Exception $e) {
+            Log::error('Register error: ' . $e->getMessage());
+            return ApiResponse::error('Terjadi kesalahan saat registrasi.', 500);
+        }
     }
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'message' => 'Successfully logged out'
-        ]);
+        try {
+            $this->authService->logout($request->user());
+            return ApiResponse::success(null, 'Berhasil logout dari perangkat ini.');
+        } catch (\Exception $e) {
+            Log::error('Logout error: ' . $e->getMessage());
+            return ApiResponse::error('Terjadi kesalahan saat logout.', 500);
+        }
     }
 
-    public function profile(Request $request)
+    public function logoutAll(Request $request)
     {
-        return response()->json([
-            'user' => $request->user()
-        ]);
+        try {
+            $this->authService->logoutAll($request->user());
+            return ApiResponse::success(null, 'Berhasil logout dari semua perangkat.');
+        } catch (\Exception $e) {
+            Log::error('LogoutAll error: ' . $e->getMessage());
+            return ApiResponse::error('Terjadi kesalahan saat logout semua perangkat.', 500);
+        }
     }
 }
