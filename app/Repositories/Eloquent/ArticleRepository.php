@@ -4,6 +4,7 @@ namespace App\Repositories\Eloquent;
 
 use App\Models\Artikel;
 use App\Repositories\Contracts\ArticleRepositoryInterface;
+use Illuminate\Support\Facades\Cache;
 
 class ArticleRepository implements ArticleRepositoryInterface
 {
@@ -40,15 +41,16 @@ class ArticleRepository implements ArticleRepositoryInterface
 
     public function getPopular(int $limit = 5)
     {
-        // Dalam implementasi nyata, kita bisa join tabel views.
-        // Untuk sekarang, kita asumsikan yang terpopuler = urutan random atau artikel dengan komentar/bookmark terbanyak.
-        // Kita gunakan inRandomOrder sebagai fallback sementara jika tidak ada view tracking.
-        return $this->baseQuery()->inRandomOrder()->take($limit)->get();
+        return Cache::remember('articles.popular', now()->addHour(), function () use ($limit) {
+            return $this->baseQuery()->inRandomOrder()->take($limit)->get();
+        });
     }
 
     public function getRecommended(int $limit = 5)
     {
-        return $this->baseQuery()->inRandomOrder()->take($limit)->get();
+        return Cache::remember('articles.recommended', now()->addHour(), function () use ($limit) {
+            return $this->baseQuery()->inRandomOrder()->take($limit)->get();
+        });
     }
 
     public function getRelatedByCategory(int $categoryId, int $excludeArticleId, int $limit = 3)

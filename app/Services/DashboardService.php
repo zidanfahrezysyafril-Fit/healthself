@@ -7,6 +7,7 @@ use App\Models\Artikel;
 use App\Models\RiwayatChat;
 use App\Models\Mood;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class DashboardService
 {
@@ -21,22 +22,24 @@ class DashboardService
     {
         $user = User::find($userId);
 
-        // Daily Quote (Static for now, but can be moved to DB)
-        $quotes = [
-            [
-                'quote' => 'Kesehatan mental bukanlah tujuan akhir, melainkan sebuah proses. Ini tentang bagaimana Anda mengemudi, bukan kemana Anda pergi.',
-                'author' => 'Noam Shpancer'
-            ],
-            [
-                'quote' => 'Anda tidak harus mengendalikan pikiran Anda. Anda hanya harus berhenti membiarkan mereka mengendalikan Anda.',
-                'author' => 'Dan Millman'
-            ],
-            [
-                'quote' => 'Perawatan diri bukanlah keegoisan, melainkan cara menyelaraskan diri untuk dapat memberikan yang terbaik.',
-                'author' => 'Parker Palmer'
-            ]
-        ];
-        $dailyQuote = $quotes[array_rand($quotes)];
+        // Daily Quote (Cached for 1 day)
+        $dailyQuote = Cache::remember('dashboard.daily_quote', now()->addDay(), function () {
+            $quotes = [
+                [
+                    'quote' => 'Kesehatan mental bukanlah tujuan akhir, melainkan sebuah proses. Ini tentang bagaimana Anda mengemudi, bukan kemana Anda pergi.',
+                    'author' => 'Noam Shpancer'
+                ],
+                [
+                    'quote' => 'Anda tidak harus mengendalikan pikiran Anda. Anda hanya harus berhenti membiarkan mereka mengendalikan Anda.',
+                    'author' => 'Dan Millman'
+                ],
+                [
+                    'quote' => 'Perawatan diri bukanlah keegoisan, melainkan cara menyelaraskan diri untuk dapat memberikan yang terbaik.',
+                    'author' => 'Parker Palmer'
+                ]
+            ];
+            return $quotes[array_rand($quotes)];
+        });
 
         // Today's Mood
         $todayMood = Mood::where('user_id', $userId)
