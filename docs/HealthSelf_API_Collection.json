@@ -1,0 +1,76 @@
+{
+    "info": {
+        "name": "HealthSelf AI Backend API",
+        "description": "Collection untuk seluruh endpoint aplikasi HealthSelf AI Mobile.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Accept", "value": "application/json"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"test@example.com\",\n    \"password\": \"password123\"\n}",
+                            "options": {"raw": {"language": "json"}}
+                        },
+                        "url": {"raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"]}
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Dashboard",
+            "item": [
+                {
+                    "name": "Get Dashboard Aggregation",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {"key": "Accept", "value": "application/json"},
+                            {"key": "Authorization", "value": "Bearer {{token}}"}
+                        ],
+                        "url": {"raw": "{{base_url}}/api/dashboard", "host": ["{{base_url}}"], "path": ["api", "dashboard"]}
+                    }
+                }
+            ]
+        },
+        {
+            "name": "AI Chat",
+            "item": [
+                {
+                    "name": "Send Message",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {"key": "Accept", "value": "application/json"},
+                            {"key": "Authorization", "value": "Bearer {{token}}"}
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"message\": \"Apa penyebab stres pada mahasiswa?\"\n}",
+                            "options": {"raw": {"language": "json"}}
+                        },
+                        "url": {"raw": "{{base_url}}/api/chat", "host": ["{{base_url}}"], "path": ["api", "chat"]}
+                    }
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://healthself.test"
+        },
+        {
+            "key": "token",
+            "value": ""
+        }
+    ]
+}
