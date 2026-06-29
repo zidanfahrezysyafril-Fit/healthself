@@ -11,14 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('artikel', function (Blueprint $table) {
-            $table->index('status');
-            $table->index('slug');
-        });
+        try {
+            Schema::table('artikel', function (Blueprint $table) {
+                $table->index('status');
+                $table->index('slug');
+            });
+        } catch (\Exception $e) {
+            // Abaikan jika index sudah ada akibat kegagalan migrasi sebelumnya
+        }
         
-        Schema::table('login_attempts', function (Blueprint $table) {
-            $table->index('user_id');
-        });
+        try {
+            Schema::table('login_attempts', function (Blueprint $table) {
+                $table->index('identifier');
+            });
+        } catch (\Exception $e) {
+            // Abaikan jika index sudah ada
+        }
     }
 
     /**
@@ -32,7 +40,7 @@ return new class extends Migration
         });
 
         Schema::table('login_attempts', function (Blueprint $table) {
-            $table->dropIndex(['user_id']);
+            $table->dropIndex(['identifier']);
         });
     }
 };
