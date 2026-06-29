@@ -3,96 +3,98 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreMoodRequest;
+use App\Http\Requests\Api\UpdateMoodRequest;
+use App\Http\Resources\Api\MoodResource;
+use App\Services\MoodService;
+use App\Helpers\ApiResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use App\Models\Mood;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class MoodController extends Controller
 {
-    // Dummy Data
-    private $dummyMoods = [
-        [
-            'id' => '1',
-            'emoji' => '😊',
-            'label' => 'Senang',
-            'notes' => 'Hari ini produktif banget dan bisa kumpul bareng teman.',
-            'sleep_hours' => 8,
-            'activities' => ['Kerja', 'Santai'],
-            'stress_level' => 3,
-            'created_at' => '2026-06-27T08:00:00Z',
-        ],
-        [
-            'id' => '2',
-            'emoji' => '😐',
-            'label' => 'Biasa',
-            'notes' => 'Cuma rebahan seharian.',
-            'sleep_hours' => 6,
-            'activities' => ['Tidur', 'Nonton'],
-            'stress_level' => 5,
-            'created_at' => '2026-06-26T08:00:00Z',
-        ],
-        [
-            'id' => '3',
-            'emoji' => '😔',
-            'label' => 'Sedih',
-            'notes' => 'Lagi banyak pikiran dan kurang tidur.',
-            'sleep_hours' => 4,
-            'activities' => ['Kerja', 'Overthinking'],
-            'stress_level' => 8,
-            'created_at' => '2026-06-25T08:00:00Z',
-        ],
-    ];
+    use AuthorizesRequests;
+
+    protected $moodService;
+
+    public function __construct(MoodService $moodService)
+    {
+        $this->moodService = $moodService;
+    }
 
     public function index()
     {
-        return response()->json([
-            'status' => 'success',
-            'data' => $this->dummyMoods,
-        ]);
+        try {
+            $userId = auth()->id() ?? 1; // Fallback for dev
+            $moods = $this->moodService->getUserMoods($userId);
+            
+            return ApiResponse::success(MoodResource::collection($moods), 'Berhasil mengambil data mood.');
+        } catch (\Exception $e) {
+            Log::error('Gagal mengambil data mood: ' . $e->getMessage());
+            return ApiResponse::error('Gagal mengambil data mood.', 500);
+        }
     }
 
-    public function store(Request $request)
+    public function store(StoreMoodRequest $request)
     {
-        $newMood = [
-            'id' => uniqid(),
-            'emoji' => $request->input('emoji', '😀'),
-            'label' => $request->input('label', 'Sangat Baik'),
-            'notes' => $request->input('notes', ''),
-            'sleep_hours' => $request->input('sleep_hours', 7),
-            'activities' => $request->input('activities', []),
-            'stress_level' => $request->input('stress_level', 5),
-            'created_at' => now()->toIso8601String(),
-        ];
+        try {
+            $userId = auth()->id() ?? 1;
+            
+            $mood = $this->moodService->createMood($userId, $request->validated());
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Mood saved successfully',
-            'data' => $newMood,
-        ], 201);
+            return ApiResponse::success(new MoodResource($mood), 'Mood berhasil disimpan.', 201);
+        } catch (\Exception $e) {
+            Log::error('Gagal menyimpan mood: ' . $e->getMessage());
+            return ApiResponse::error('Gagal menyimpan mood.', 500);
+        }
+    }
+
+    public function update(UpdateMoodRequest $request, $id)
+    {
+        try {
+            $userId = auth()->id() ?? 1;
+            
+            // Note: Authorization can also be handled by Policy if injected as Model
+            // Here Service ensures it's updated by the right user or throws NotFound
+            $mood = $this->moodService->updateMood($id, $userId, $request->validated());
+
+            return ApiResponse::success(new MoodResource($mood), 'Mood berhasil diperbarui.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return ApiResponse::error('Mood tidak ditemukan atau bukan milik Anda.', 404);
+        } catch (\Exception $e) {
+            Log::error('Gagal memperbarui mood: ' . $e->getMessage());
+            return ApiResponse::error('Gagal memperbarui mood.', 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $userId = auth()->id() ?? 1;
+            
+            $this->moodService->deleteMood($id, $userId);
+
+            return ApiResponse::success(null, 'Mood berhasil dihapus.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return ApiResponse::error('Mood tidak ditemukan atau bukan milik Anda.', 404);
+        } catch (\Exception $e) {
+            Log::error('Gagal menghapus mood: ' . $e->getMessage());
+            return ApiResponse::error('Gagal menghapus mood.', 500);
+        }
     }
 
     public function statistics()
     {
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'distribution' => [
-                    ['name' => 'Sangat Baik', 'emoji' => '😀', 'percentage' => 30],
-                    ['name' => 'Baik', 'emoji' => '😊', 'percentage' => 40],
-                    ['name' => 'Biasa', 'emoji' => '😐', 'percentage' => 15],
-                    ['name' => 'Buruk', 'emoji' => '😔', 'percentage' => 10],
-                    ['name' => 'Sangat Buruk', 'emoji' => '😭', 'percentage' => 5],
-                ],
-                'stress_trend' => [
-                    ['day' => 'Sen', 'level' => 4],
-                    ['day' => 'Sel', 'level' => 3],
-                    ['day' => 'Rab', 'level' => 6],
-                    ['day' => 'Kam', 'level' => 8],
-                    ['day' => 'Jum', 'level' => 5],
-                    ['day' => 'Sab', 'level' => 3],
-                    ['day' => 'Min', 'level' => 2],
-                ],
-                'average_sleep' => 6.5,
-                'dominant_mood' => '😊',
-            ],
-        ]);
+        try {
+            $userId = auth()->id() ?? 1;
+            $statistics = $this->moodService->getMoodStatistics($userId);
+            
+            return ApiResponse::success($statistics, 'Berhasil mengambil statistik mood.');
+        } catch (\Exception $e) {
+            Log::error('Gagal menghitung statistik mood: ' . $e->getMessage());
+            return ApiResponse::error('Gagal mengambil statistik mood.', 500);
+        }
     }
 }
