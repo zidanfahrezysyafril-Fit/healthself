@@ -58,4 +58,12 @@ class Artikel extends Model
         }
         return 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=800&auto=format&fit=crop';
     }
+
+    /**
+     * Get the users who bookmarked this article.
+     */
+    public function bookmarkedByUsers()
+    {
+        return $this->belongsToMany(User::class, 'article_user_bookmarks', 'artikel_id', 'user_id')->withTimestamps();
+    }
 }

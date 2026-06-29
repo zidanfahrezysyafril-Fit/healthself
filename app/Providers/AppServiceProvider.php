@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Repositories\Contracts\MoodRepositoryInterface;
 use App\Repositories\Eloquent\MoodRepository;
+use App\Repositories\Contracts\ArticleRepositoryInterface;
+use App\Repositories\Eloquent\ArticleRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,6 +16,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(MoodRepositoryInterface::class, MoodRepository::class);
+        $this->app->bind(ArticleRepositoryInterface::class, ArticleRepository::class);
     }
 
     /**

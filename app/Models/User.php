@@ -42,6 +42,19 @@ class User extends Authenticatable
     }
 
     // --- Relasi ---
+    public function latestLogin()
+    {
+        return $this->hasOne(LoginAttempt::class)->latestOfMany();
+    }
+
+    /**
+     * Get the articles bookmarked by the user.
+     */
+    public function bookmarkedArticles()
+    {
+        return $this->belongsToMany(Artikel::class, 'article_user_bookmarks', 'user_id', 'artikel_id')->withTimestamps();
+    }
+
     public function artikel()
     {
         return $this->hasMany(Artikel::class, 'id_user');

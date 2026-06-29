@@ -18,22 +18,25 @@ Route::prefix('auth')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
     
     // Dashboard Endpoints
-    Route::get('/dashboard/articles', [DashboardController::class, 'articles']);
-    Route::get('/dashboard/quotes', [DashboardController::class, 'quotes']);
-    Route::get('/dashboard/moods/today', [DashboardController::class, 'moodsToday']);
+   // Dashboard
+    Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardController::class, 'index']);
 
     // Article Endpoints
-    Route::get('/articles', [ArticleController::class, 'index']);
-    Route::get('/articles/{slug}', [ArticleController::class, 'show']);
+    Route::get('/articles', [\App\Http\Controllers\Api\ArticleController::class, 'index']);
+    Route::get('/articles/popular', [\App\Http\Controllers\Api\ArticleController::class, 'popular']);
+    Route::get('/articles/recommended', [\App\Http\Controllers\Api\ArticleController::class, 'recommended']);
+    Route::get('/articles/category/{slug}', [\App\Http\Controllers\Api\ArticleController::class, 'getByCategory']);
+    Route::get('/articles/{slug}', [\App\Http\Controllers\Api\ArticleController::class, 'show']);
+    Route::post('/articles/{id}/bookmark', [\App\Http\Controllers\Api\ArticleController::class, 'toggleBookmark']);
 
     // Chat Endpoints
     Route::get('/chat/history', [ChatController::class, 'history']);
     Route::post('/chat/send', [ChatController::class, 'send']);
 
     // Mood Endpoints
-    Route::get('/moods', [MoodController::class, 'index']);
-    Route::post('/moods', [MoodController::class, 'store']);
-    Route::get('/moods/statistics', [MoodController::class, 'statistics']);
+   // Mood (Sprint A2)
+Route::get('/moods/statistics', [\App\Http\Controllers\Api\MoodController::class, 'statistics']);
+Route::apiResource('moods', \App\Http\Controllers\Api\MoodController::class);
     
     // Profile Endpoints
     Route::get('/profile', [ProfileController::class, 'index']);
