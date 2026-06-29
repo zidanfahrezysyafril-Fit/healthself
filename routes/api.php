@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ArticleController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\MoodController;
+use App\Http\Controllers\Api\ProfileController;
 
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
@@ -33,3 +34,8 @@ Route::prefix('auth')->group(function () {
     Route::get('/moods', [MoodController::class, 'index']);
     Route::post('/moods', [MoodController::class, 'store']);
     Route::get('/moods/statistics', [MoodController::class, 'statistics']);
+    
+    // Profile Endpoints
+    Route::get('/profile', [ProfileController::class, 'index']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::post('/change-password', [ProfileController::class, 'changePassword']);
