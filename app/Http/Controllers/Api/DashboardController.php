@@ -20,7 +20,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         try {
-            $userId = auth()->id() ?? 1; // Fallback for dev without auth
+            $userId = auth()->id();
 
             $data = $this->dashboardService->getDashboardData($userId);
 

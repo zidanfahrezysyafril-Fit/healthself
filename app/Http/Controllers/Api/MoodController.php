@@ -27,7 +27,7 @@ class MoodController extends Controller
     public function index()
     {
         try {
-            $userId = auth()->id() ?? 1; // Fallback for dev
+            $userId = auth()->id();
             $moods = $this->moodService->getUserMoods($userId);
             
             return ApiResponse::success(MoodResource::collection($moods), 'Berhasil mengambil data mood.');
@@ -40,7 +40,7 @@ class MoodController extends Controller
     public function store(StoreMoodRequest $request)
     {
         try {
-            $userId = auth()->id() ?? 1;
+            $userId = auth()->id();
             
             $mood = $this->moodService->createMood($userId, $request->validated());
 
@@ -54,7 +54,7 @@ class MoodController extends Controller
     public function update(UpdateMoodRequest $request, $id)
     {
         try {
-            $userId = auth()->id() ?? 1;
+            $userId = auth()->id();
             
             // Note: Authorization can also be handled by Policy if injected as Model
             // Here Service ensures it's updated by the right user or throws NotFound
@@ -72,7 +72,7 @@ class MoodController extends Controller
     public function destroy($id)
     {
         try {
-            $userId = auth()->id() ?? 1;
+            $userId = auth()->id();
             
             $this->moodService->deleteMood($id, $userId);
 
@@ -88,7 +88,7 @@ class MoodController extends Controller
     public function statistics()
     {
         try {
-            $userId = auth()->id() ?? 1;
+            $userId = auth()->id();
             $statistics = $this->moodService->getMoodStatistics($userId);
             
             return ApiResponse::success($statistics, 'Berhasil mengambil statistik mood.');

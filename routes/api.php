@@ -10,39 +10,44 @@ use App\Http\Controllers\Api\MoodController;
 use App\Http\Controllers\Api\ProfileController;
 
 Route::prefix('auth')->group(function () {
-    Route::post('/login', [\App\Http\Controllers\Api\AuthController::class, 'login']);
-    Route::post('/register', [\App\Http\Controllers\Api\AuthController::class, 'register']);
-    
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register']);
+
     // Protected Auth Endpoints
     Route::middleware('auth:sanctum')->group(function () {
-        Route::post('/logout', [\App\Http\Controllers\Api\AuthController::class, 'logout']);
-        Route::post('/logout-all', [\App\Http\Controllers\Api\AuthController::class, 'logoutAll']);
+        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::post('/logout-all', [AuthController::class, 'logoutAll']);
     });
 });
 
-    // Dashboard
-    Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardController::class, 'index']);
+// Public Article routes (no auth needed for reading)
+Route::get('/articles', [ArticleController::class, 'index']);
+Route::get('/articles/popular', [ArticleController::class, 'popular']);
+Route::get('/articles/recommended', [ArticleController::class, 'recommended']);
+Route::get('/articles/category/{slug}', [ArticleController::class, 'getByCategory']);
+Route::get('/articles/{slug}', [ArticleController::class, 'show']);
 
-    // Article Endpoints
-    Route::get('/articles', [\App\Http\Controllers\Api\ArticleController::class, 'index']);
-    Route::get('/articles/popular', [\App\Http\Controllers\Api\ArticleController::class, 'popular']);
-    Route::get('/articles/recommended', [\App\Http\Controllers\Api\ArticleController::class, 'recommended']);
-    Route::get('/articles/category/{slug}', [\App\Http\Controllers\Api\ArticleController::class, 'getByCategory']);
-    Route::get('/articles/{slug}', [\App\Http\Controllers\Api\ArticleController::class, 'show']);
-    Route::post('/articles/{id}/bookmark', [\App\Http\Controllers\Api\ArticleController::class, 'toggleBookmark']);
+// Protected routes - require authentication
+Route::middleware('auth:sanctum')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    // Article bookmark (needs auth)
+    Route::post('/articles/{id}/bookmark', [ArticleController::class, 'toggleBookmark']);
 
     // Chat Endpoints
     Route::get('/chat/history', [ChatController::class, 'history']);
     Route::post('/chat/send', [ChatController::class, 'send']);
 
     // Mood Endpoints
-   // Mood (Sprint A2)
-Route::get('/moods/statistics', [\App\Http\Controllers\Api\MoodController::class, 'statistics']);
-Route::apiResource('moods', \App\Http\Controllers\Api\MoodController::class);
-    
+    Route::get('/moods/statistics', [MoodController::class, 'statistics']);
+    Route::apiResource('moods', MoodController::class);
+
     // Profile Endpoints
-    Route::get('/profile', [\App\Http\Controllers\Api\ProfileController::class, 'index']);
-    Route::put('/profile', [\App\Http\Controllers\Api\ProfileController::class, 'update']);
-    Route::post('/profile/avatar', [\App\Http\Controllers\Api\ProfileController::class, 'updateAvatar']);
-    Route::delete('/profile/avatar', [\App\Http\Controllers\Api\ProfileController::class, 'deleteAvatar']);
-    Route::post('/change-password', [\App\Http\Controllers\Api\ProfileController::class, 'changePassword']);
+    Route::get('/profile', [ProfileController::class, 'index']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar']);
+    Route::delete('/profile/avatar', [ProfileController::class, 'deleteAvatar']);
+    Route::post('/change-password', [ProfileController::class, 'changePassword']);
+});
+
