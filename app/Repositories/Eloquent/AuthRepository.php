@@ -26,12 +26,14 @@ class AuthRepository implements AuthRepositoryInterface
 
     public function recordLoginHistory(int $userId, string $ipAddress, string $userAgent): void
     {
-        LoginAttempt::create([
-            'user_id' => $userId,
-            'ip_address' => $ipAddress,
-            'user_agent' => $userAgent,
-            'status' => 'success',
-            'login_time' => now(), // Assume model has login_time or timestamps
-        ]);
+        // Fitur riwayat login dinonaktifkan karena tabel login_attempts 
+        // khusus untuk brute-force, bukan untuk history.
+        // LoginAttempt::create([
+        //     'user_id' => $userId,
+        //     'ip_address' => $ipAddress,
+        //     'user_agent' => $userAgent,
+        //     'status' => 'success',
+        //     'login_time' => now(),
+        // ]);
     }
 }
