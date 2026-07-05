@@ -17,12 +17,7 @@ class CheckRole
         $user = auth()->user();
 
         if (!in_array($user->role, $roles)) {
-            // Redirect ke dashboard sesuai role
-            return match ($user->role) {
-                'admin'    => redirect()->route('admin.dashboard')->with('error', 'Akses tidak diizinkan.'),
-                'konselor' => redirect()->route('konselor.dashboard')->with('error', 'Akses tidak diizinkan.'),
-                default    => redirect()->route('home')->with('error', 'Akses tidak diizinkan.'),
-            };
+            abort(403, 'Akses Ditolak: Anda tidak memiliki izin untuk halaman ini.');
         }
 
         return $next($request);

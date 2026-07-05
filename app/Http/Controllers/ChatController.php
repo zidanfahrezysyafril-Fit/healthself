@@ -203,6 +203,29 @@ ATURAN:
 
             /*
             |--------------------------------------------------------------------------
+            | AUTOMATED ESCALATION (DETEKSI SENSITIF)
+            |--------------------------------------------------------------------------
+            */
+            $sensitiveKeywords = [
+                'bunuh diri', 'ingin mati', 'akhiri hidup', 'menyakiti diri',
+                'depresi berat', 'tidak kuat lagi', 'putus asa',
+                'sayat', 'overdosis', 'tidak ada gunanya hidup'
+            ];
+
+            $isFlagged = false;
+            $flagReason = null;
+            $lowerMessage = strtolower($message);
+
+            foreach ($sensitiveKeywords as $keyword) {
+                if (str_contains($lowerMessage, $keyword)) {
+                    $isFlagged = true;
+                    $flagReason = 'Sistem Otomatis: Terdeteksi kata kunci bahaya ("' . $keyword . '").';
+                    break;
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
             | SAVE CHAT
             |--------------------------------------------------------------------------
             */
@@ -212,6 +235,8 @@ ATURAN:
                 'pesan_user' => $message,
                 'respon_bot' => $reply,
                 'waktu_chat' => now(),
+                'is_flagged' => $isFlagged,
+                'flag_reason' => $flagReason,
             ]);
 
             /*

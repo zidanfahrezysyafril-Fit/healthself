@@ -23,7 +23,8 @@ class DashboardController extends Controller
         ];
 
         $pendingArtikel  = Artikel::with(['pembuat', 'kategori'])->where('status', 'pending')->latest()->take(5)->get();
-        $recentChats     = RiwayatChat::with('user')->latest('waktu_chat')->take(10)->get();
+        // HANYA tampilkan pesan yang ditandai sensitif di Dashboard Konselor
+        $recentChats     = RiwayatChat::with('user')->where('is_flagged', true)->latest('waktu_chat')->take(10)->get();
         $recentFeedback  = Feedback::with('user')->latest()->take(5)->get();
 
         return view('konselor.dashboard', compact('stats', 'pendingArtikel', 'recentChats', 'recentFeedback'));

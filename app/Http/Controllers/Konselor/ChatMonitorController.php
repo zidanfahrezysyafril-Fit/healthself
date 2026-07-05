@@ -13,9 +13,11 @@ class ChatMonitorController extends Controller
 {
     public function index(Request $request)
     {
-        // Ambil semua user yang punya riwayat chat
+        // Hanya ambil user yang memiliki riwayat chat BERBAHAYA (is_flagged = true)
         $query = User::where('role', 'mahasiswa')
-                     ->whereHas('riwayatChat');
+                     ->whereHas('riwayatChat', function ($q) {
+                         $q->where('is_flagged', true);
+                     });
 
         if ($request->filled('search')) {
             $s = $request->search;
@@ -24,9 +26,11 @@ class ChatMonitorController extends Controller
             });
         }
 
-        $users = $query->withCount('riwayatChat')
+        $users = $query->withCount(['riwayatChat' => function ($q) {
+                           $q->where('is_flagged', true);
+                       }])
                        ->with(['riwayatChat' => function ($q) {
-                           $q->latest('waktu_chat')->limit(1);
+                           $q->where('is_flagged', true)->latest('waktu_chat')->limit(1);
                        }])
                        ->latest()
                        ->paginate(15);
@@ -38,7 +42,9 @@ class ChatMonitorController extends Controller
 
     public function detail(Request $request, User $user)
     {
+        // HANYA tampilkan pesan yang sensitif (is_flagged = true) untuk menjaga privasi
         $chats = RiwayatChat::where('id_user', $user->id)
+                             ->where('is_flagged', true)
                              ->with('komentar.konselor')
                              ->orderBy('waktu_chat')
                              ->get();
