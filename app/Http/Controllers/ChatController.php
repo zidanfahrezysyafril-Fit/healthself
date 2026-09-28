@@ -48,7 +48,7 @@ class ChatController extends Controller
                     ->post(
                         'https://api.groq.com/openai/v1/chat/completions',
                         [
-                            'model' => 'llama-3.1-8b-instant',
+                            'model' => 'openai/gpt-oss-20b',
                             'messages' => [
                                 [
                                     'role' => 'system',
@@ -89,11 +89,15 @@ class ChatController extends Controller
                 $pythonPath = 'C:\\Users\\Pongo\\AppData\\Local\\Programs\\Python\\Python311\\python.exe';
             }
 
-            $process = new Process([
-                $pythonPath,
-                base_path('python/search.py'),
-                $messageForSearch
-            ]);
+            $process = new Process(
+                [
+                    $pythonPath,
+                    base_path('python/search.py'),
+                    $messageForSearch
+                ],
+                null, // cwd
+                getenv() // Pass system environment variables to prevent WinError 10106
+            );
 
             $process->run();
 
@@ -108,7 +112,8 @@ class ChatController extends Controller
 
             \Log::info('RAG CONTEXT:', [
     'query' => $message,
-    'context' => $ragContext
+    'context' => $ragContext,
+    'error' => $process->getErrorOutput()
 ]);
 
             if (empty($ragContext)) {
@@ -184,7 +189,7 @@ ATURAN:
                 ->post(
                     'https://api.groq.com/openai/v1/chat/completions',
                     [
-                        'model' => 'llama-3.1-8b-instant',
+                        'model' => 'openai/gpt-oss-20b',
                         'messages' => $messages,
                         'temperature' => 0.3
                     ]

@@ -3,55 +3,65 @@
 @section('content')
 
 {{-- HERO SECTION --}}
-<section class="relative pt-24 pb-16 overflow-hidden bg-gradient-to-br from-[#FFF8F8] to-[#fbe2e2]">
-    <!-- Decorative elements (clipped by overflow-hidden on section) -->
-    <div class="absolute top-0 right-0 w-64 h-64 rounded-full bg-gradient-to-bl from-rose-200 to-transparent opacity-50 blur-3xl pointer-events-none"></div>
-    <div class="absolute bottom-0 left-0 w-60 h-60 rounded-full bg-gradient-to-tr from-[#800000] to-transparent opacity-10 blur-3xl pointer-events-none"></div>
+<section class="relative pt-32 pb-24 overflow-hidden bg-[#FAFAFA]">
+    <!-- Animated Gradient Background -->
+    <div class="absolute top-0 left-0 w-full h-full overflow-hidden -z-10">
+        <div class="absolute -top-[20%] -right-[10%] w-[70%] h-[70%] rounded-full bg-gradient-to-br from-red-100/40 to-rose-200/40 blur-3xl animate-pulse" style="animation-duration: 8s;"></div>
+        <div class="absolute -bottom-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-gradient-to-tr from-[#800000]/5 to-transparent blur-3xl animate-pulse" style="animation-duration: 10s;"></div>
+    </div>
 
-    <div class="container mx-auto px-4 sm:px-6 flex flex-col md:grid md:grid-cols-2 gap-10 md:gap-16 items-center relative z-10">
+    <div class="container mx-auto px-4 sm:px-6 flex flex-col lg:grid lg:grid-cols-12 gap-12 lg:gap-8 items-center relative z-10">
 
-        {{-- TOP ON MOBILE: Gambar --}}
-        <div class="relative w-full order-first md:order-last" data-aos="zoom-in" data-aos-delay="200">
-            <div class="absolute inset-0 bg-gradient-to-tr from-[#800000]/20 to-transparent rounded-[30px] md:rounded-[40px] transform rotate-3 scale-105 -z-10 transition-transform duration-500 hover:rotate-6"></div>
-            <img src="sehat.png" alt="Mental & Physical Healthcare" class="rounded-[30px] md:rounded-[40px] shadow-2xl object-cover w-full h-[260px] sm:h-[320px] md:h-auto md:max-h-[500px] transform transition duration-500 hover:scale-[1.02]" onerror="this.src='https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop';">
-        </div>
-
-        {{-- BOTTOM ON MOBILE: Teks --}}
-        <div class="w-full order-last md:order-first">
-            <div data-aos="fade-down" class="inline-block px-4 py-2 rounded-full bg-red-100 text-[#800000] font-semibold text-xs mb-4 tracking-wider uppercase border border-red-200 shadow-sm">
-                Kesehatan Holistik & Mental
+        {{-- LEFT COLUMN: Teks --}}
+        <div class="w-full lg:col-span-6 lg:pr-10 order-last lg:order-first text-center lg:text-left">
+            
+            <!-- Glassmorphism Badge -->
+            <div data-aos="fade-down" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-md border border-white/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] text-[#800000] font-bold text-xs mb-6 tracking-wide uppercase transition-transform hover:-translate-y-1 duration-300">
+                <span class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                </span>
+                Kesehatan Holistik & Mental 24/7
             </div>
 
-            <h1 data-aos="fade-up" data-aos-delay="100" class="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-[1.2] text-gray-900">
-                Temukan Keseimbangan
-                <br class="hidden sm:block">
-                <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#800000] to-[#d63333]">Pikiran & Tubuh</span>
+            <h1 data-aos="fade-up" data-aos-delay="100" class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.15] text-gray-900 tracking-tight">
+                Temukan Harmoni <br class="hidden sm:block">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#800000] via-[#A81010] to-[#E63946] drop-shadow-sm">
+                    Pikiran & Tubuh
+                </span>
             </h1>
 
-            <p data-aos="fade-up" data-aos-delay="200" class="mt-4 text-base sm:text-lg text-gray-600 leading-relaxed font-light">
-                Kesehatan sejati bukan hanya fisik, tapi juga pikiran yang tenang. Dapatkan dukungan, informasi, dan konsultasi interaktif untuk kesehatan fisik dan mental Anda setiap saat.
+            <p data-aos="fade-up" data-aos-delay="200" class="mt-6 text-base sm:text-lg text-gray-500 leading-relaxed font-medium max-w-xl mx-auto lg:mx-0">
+                Kesehatan sejati bukan hanya fisik, tapi juga pikiran yang damai. Dapatkan dukungan, informasi, dan <b class="text-gray-800">konsultasi interaktif AI</b> secara instan dan rahasia.
             </p>
 
-            <div data-aos="fade-up" data-aos-delay="300" class="mt-8 flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-4">
-                <div class="flex flex-col sm:flex-row flex-wrap gap-4 w-full sm:w-auto">
-                    <a href="#" onclick="document.getElementById('chatToggle').click(); return false;" class="bg-white text-[#800000] px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl hover:scale-105 transition duration-300 font-bold flex items-center justify-center gap-2">
-                        Mulai Konsultasi 
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                    </a>
-                    <a href="#layanan" class="bg-white text-gray-800 px-6 py-3 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md hover:-translate-y-1 transition duration-300 font-semibold flex items-center justify-center gap-2">
-                        Eksplorasi Layanan
-                    </a>
-                </div>
+            <div data-aos="fade-up" data-aos-delay="300" class="mt-10 flex flex-col sm:flex-row flex-wrap items-center justify-center lg:justify-start gap-4">
+                <a href="#" onclick="document.getElementById('chatToggle').click(); return false;" class="w-full sm:w-auto bg-gradient-to-r from-[#800000] to-[#b30000] text-white px-8 py-4 rounded-2xl shadow-[0_8px_25px_-5px_rgba(128,0,0,0.4)] hover:shadow-[0_12px_35px_-5px_rgba(128,0,0,0.5)] hover:-translate-y-1 transition-all duration-300 font-bold flex items-center justify-center gap-3 group">
+                    <span>Mulai Konsultasi AI</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                </a>
+                <a href="#layanan" class="w-full sm:w-auto bg-white/80 backdrop-blur-md text-gray-800 px-8 py-4 rounded-2xl shadow-sm border border-gray-100/50 hover:bg-white hover:shadow-lg hover:-translate-y-1 transition-all duration-300 font-bold flex items-center justify-center gap-2">
+                    Eksplorasi Fitur
+                </a>
+            </div>
 
-                <!-- Badge -->
-                <div class="bg-white px-5 py-3 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
-                    <div class="bg-green-100 p-2 rounded-full text-green-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" /></svg>
-                    </div>
-                    <div>
-                        <p class="text-xs text-gray-500 font-medium leading-none mb-1">Layanan Digital</p>
-                        <p class="font-bold text-gray-900 text-sm leading-none">Aktif 24/7</p>
-                    </div>
+        </div>
+
+        {{-- RIGHT COLUMN: Gambar & Floating Cards --}}
+        <div class="relative w-full lg:col-span-6 order-first lg:order-last" data-aos="zoom-in" data-aos-delay="200">
+            <!-- Background Blob for Image -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-[90%] bg-gradient-to-tr from-[#800000]/10 to-rose-100 rounded-[40px] rotate-6 scale-105 -z-10 transition-transform duration-700 hover:rotate-3"></div>
+            
+            <img src="sehat.png" alt="Mental & Physical Healthcare" class="rounded-[32px] shadow-2xl object-cover w-full h-[300px] sm:h-[400px] lg:h-[550px] transform transition duration-700 hover:scale-[1.03] border-4 border-white/50 backdrop-blur-sm" onerror="this.src='https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop';">
+            
+            <!-- Floating Stats Card (Glassmorphism) -->
+            <div class="absolute -bottom-6 -left-6 sm:bottom-10 sm:-left-10 bg-white/70 backdrop-blur-xl border border-white p-4 sm:p-5 rounded-3xl shadow-[0_15px_35px_-5px_rgba(0,0,0,0.1)] flex items-center gap-4 animate-bounce" style="animation-duration: 4s;">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 shadow-inner">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 font-semibold mb-0.5">Respons AI</p>
+                    <p class="font-extrabold text-gray-900 text-lg leading-none">Cepat & Akurat</p>
                 </div>
             </div>
 

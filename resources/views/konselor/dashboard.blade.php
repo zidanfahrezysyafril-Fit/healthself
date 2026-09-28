@@ -142,8 +142,11 @@
                         <tr>
                             <td>
                                 <div style="display:flex; align-items:center; gap:12px;">
-                                    <img src="{{ $fb->user->avatarUrl() }}" style="width:36px; height:36px; border-radius:10px; object-fit:cover;" alt="">
-                                    <span style="font-weight:700; color:#0f172a;">{{ $fb->user->name }}</span>
+                                    <img src="{{ $fb->user->avatarUrl() }}" style="width:40px; height:40px; border-radius:12px; object-fit:cover; border:2px solid #f1f5f9; box-shadow:0 2px 5px rgba(0,0,0,0.05);" alt="">
+                                    <div style="display:flex; flex-direction:column;">
+                                        <span style="font-weight:800; color:#0f172a; font-size:0.95rem;">{{ $fb->user->name }}</span>
+                                        <span style="font-size:0.75rem; color:#64748b; font-weight:500;">{{ $fb->user->email }}</span>
+                                    </div>
                                 </div>
                             </td>
                             <td>

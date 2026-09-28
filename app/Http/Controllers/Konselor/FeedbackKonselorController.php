@@ -11,6 +11,10 @@ class FeedbackKonselorController extends Controller
     {
         $feedbacks  = Feedback::with('user')->latest()->paginate(20);
         $avgRating  = round(Feedback::avg('rating'), 1);
-        return view('konselor.feedback.index', compact('feedbacks', 'avgRating'));
+        $ratingCounts = Feedback::selectRaw('rating, count(*) as total')
+            ->groupBy('rating')
+            ->orderBy('rating')
+            ->pluck('total', 'rating');
+        return view('konselor.feedback.index', compact('feedbacks', 'avgRating', 'ratingCounts'));
     }
 }

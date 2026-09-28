@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('page-title', 'HealthSelf') – Platform Kesehatan Digital</title>
     <meta name="description" content="@yield('meta-description', 'Platform informasi kesehatan digital yang membantu Anda mendapatkan edukasi dan konsultasi kesehatan.')">
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo.jpg') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 

@@ -100,7 +100,11 @@ class AuthController extends Controller
         Cache::forget('otp_' . $user->id);
         $user->update(['email_verified_at' => now()]);
 
-        return $this->redirectByRole($user)->with('success', 'Email berhasil diverifikasi! Selamat datang di HealthSelf.');
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('login')->with('success', 'Email berhasil diverifikasi! Silakan login untuk melanjutkan.');
     }
 
     public function resendOtp()

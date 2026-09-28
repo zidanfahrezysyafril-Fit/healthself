@@ -5,11 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasFactory, Notifiable;
 
     protected $fillable = [
         'name', 'email', 'password', 'google_id', 'avatar',
@@ -36,7 +35,12 @@ class User extends Authenticatable
     public function avatarUrl(): string
     {
         if ($this->avatar) {
-            return str_starts_with($this->avatar, 'http') ? $this->avatar : asset('storage/' . $this->avatar);
+            if (str_starts_with($this->avatar, 'http')) {
+                return $this->avatar;
+            }
+            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($this->avatar)) {
+                return asset('storage/' . $this->avatar);
+            }
         }
         return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=800000&color=fff&size=128';
     }
