@@ -79,42 +79,66 @@ class ChatController extends Controller
 
             /*
             |--------------------------------------------------------------------------
-            | RAG SEARCH
+            | RAG SEARCH (PINECONE)
             |--------------------------------------------------------------------------
             */
 
-            $pythonPath = base_path('python/venv/bin/python');
-            if (!file_exists($pythonPath)) {
-                // Fallback for Windows local development
-                $pythonPath = 'C:\\Users\\Pongo\\AppData\\Local\\Programs\\Python\\Python311\\python.exe';
+            $pineconeApiKey = env('PINECONE_API_KEY');
+            $pineconeHost = env('PINECONE_HOST');
+            
+            $ragContext = '';
+
+            if ($pineconeApiKey && $pineconeHost) {
+                // 1. Create Embeddings using Pinecone Inference
+                $embedResponse = Http::withHeaders([
+                    'Api-Key' => $pineconeApiKey,
+                    'Content-Type' => 'application/json',
+                    'X-Pinecone-API-Version' => '2024-10'
+                ])->post('https://api.pinecone.io/embed', [
+                    'model' => 'multilingual-e5-large',
+                    'parameters' => [
+                        'input_type' => 'query'
+                    ],
+                    'inputs' => [
+                        ['text' => $messageForSearch]
+                    ]
+                ]);
+
+                if ($embedResponse->successful() && isset($embedResponse['data'][0]['values'])) {
+                    $queryEmbedding = $embedResponse['data'][0]['values'];
+
+                    // 2. Query Pinecone Index
+                    $queryResponse = Http::withHeaders([
+                        'Api-Key' => $pineconeApiKey,
+                        'Content-Type' => 'application/json',
+                    ])->post('https://' . $pineconeHost . '/query', [
+                        'vector' => $queryEmbedding,
+                        'topK' => 5,
+                        'includeMetadata' => true
+                    ]);
+
+                    if ($queryResponse->successful() && isset($queryResponse['matches'])) {
+                        foreach ($queryResponse['matches'] as $match) {
+                            $metadata = $match['metadata'] ?? [];
+                            $q = $metadata['question'] ?? '';
+                            $a = $metadata['answer'] ?? '';
+                            
+                            $ragContext .= "Question:\n{$q}\n\nAnswer:\n{$a}\n\n---------------------\n";
+                        }
+                    } else {
+                        \Log::error('Pinecone Query Error:', ['res' => $queryResponse->body()]);
+                    }
+                } else {
+                    \Log::error('Pinecone Embed Error:', ['res' => $embedResponse->body()]);
+                }
             }
 
-            $process = new Process(
-                [
-                    $pythonPath,
-                    base_path('python/search.py'),
-                    $messageForSearch
-                ],
-                null, // cwd
-                getenv() // Pass system environment variables to prevent WinError 10106
-            );
-
-            $process->run();
-
-            // Uncomment to debug python script
-            // dd([
-            //     'success' => $process->isSuccessful(),
-            //     'output' => $process->getOutput(),
-            //     'error' => $process->getErrorOutput(),
-            // ]);
-
-            $ragContext = trim($process->getOutput());
+            $ragContext = trim($ragContext);
 
             \Log::info('RAG CONTEXT:', [
-    'query' => $message,
-    'context' => $ragContext,
-    'error' => $process->getErrorOutput()
-]);
+                'query' => $message,
+                'context' => $ragContext
+            ]);
 
             if (empty($ragContext)) {
                 $ragContext = 'Tidak ditemukan informasi yang relevan.';
