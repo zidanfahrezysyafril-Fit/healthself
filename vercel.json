@@ -12,8 +12,12 @@
     ],
     "routes": [
         {
-            "src": "/build/(.*)",
-            "dest": "/public/build/$1"
+            "src": "/(build|images|fonts|storage)/(.*)",
+            "dest": "/public/$1/$2"
+        },
+        {
+            "src": "/(.*\\.(ico|txt|png|jpg|jpeg|gif|svg|woff2?|ttf|eot))$",
+            "dest": "/public/$1"
         },
         {
             "src": "/(.*)",
