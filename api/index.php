@@ -16,12 +16,21 @@ $app = require_once __DIR__.'/../bootstrap/app.php';
 
 // MAGIC VERCEL TRICK: Move storage to /tmp to avoid Read-Only file system errors
 $app->useStoragePath($_ENV['APP_STORAGE'] ?? '/tmp/storage');
+$app->useBootstrapPath($_ENV['APP_BOOTSTRAP'] ?? '/tmp/bootstrap');
 
 // Create required directories in /tmp
 $storagePath = $app->storagePath();
-foreach (['app/public', 'framework/views', 'framework/cache/data', 'framework/sessions', 'logs'] as $dir) {
-    if (!is_dir("{$storagePath}/{$dir}")) {
-        @mkdir("{$storagePath}/{$dir}", 0777, true);
+$bootstrapPath = $app->bootstrapPath();
+foreach ([
+    "{$storagePath}/app/public", 
+    "{$storagePath}/framework/views", 
+    "{$storagePath}/framework/cache/data", 
+    "{$storagePath}/framework/sessions", 
+    "{$storagePath}/logs",
+    "{$bootstrapPath}/cache"
+] as $dir) {
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0777, true);
     }
 }
 
