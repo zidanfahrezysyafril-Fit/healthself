@@ -307,7 +307,7 @@
             </li>
             <li>
                 <div class="feature-icon">💬</div>
-                <span>Chatbot AI kesehatan aktif 24 jam sehari</span>
+                <span>Chatbot AI kesehatan aktif 24 jam</span>
             </li>
             <li>
                 <div class="feature-icon">🔒</div>
