@@ -202,6 +202,7 @@ class AuthController extends Controller
      * - Jangan izinkan upaya menebak ID login (pesan seragam)
      * - Rate limiting / cooldown brute force
      * - Token sekali pakai dengan masa berlaku (5 menit)
+     * - Disimpan di tabel password_reset_tokens Supabase agar persisten di Serverless
      */
     public function sendResetOtp(Request $request)
     {
@@ -213,15 +214,17 @@ class AuthController extends Controller
         ]);
 
         $email = trim(strtolower($request->email));
-        $cacheKey = 'reset_otp_' . md5($email);
-        $cooldownKey = 'reset_cooldown_' . md5($email);
 
-        // Cek cooldown pengiriman OTP (40 detik antar request)
-        if (Cache::has($cooldownKey)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Permintaan terlalu cepat. Tunggu beberapa saat sebelum meminta kode baru.',
-            ], 429);
+        // Cek cooldown 40 detik antar permintaan dari database
+        $existing = \DB::table('password_reset_tokens')->where('email', $email)->first();
+        if ($existing && $existing->created_at) {
+            $secondsSince = now()->diffInSeconds(\Carbon\Carbon::parse($existing->created_at));
+            if ($secondsSince < 40) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permintaan terlalu cepat. Tunggu ' . (40 - $secondsSince) . ' detik sebelum meminta kode baru.',
+                ], 429);
+            }
         }
 
         $user = User::where('email', $email)->first();
@@ -230,19 +233,19 @@ class AuthController extends Controller
         if ($user) {
             $otp = (string) random_int(100000, 999999);
 
-            // Simpan hash OTP di cache selama 5 menit
-            Cache::put($cacheKey, [
-                'user_id' => $user->id,
-                'otp'     => Hash::make($otp),
-            ], now()->addMinutes(5));
-
-            // Set cooldown 40 detik
-            Cache::put($cooldownKey, true, now()->addSeconds(40));
+            // Simpan hash OTP ke tabel password_reset_tokens di database
+            \DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $email],
+                [
+                    'token'      => Hash::make($otp),
+                    'created_at' => now(),
+                ]
+            );
 
             try {
                 Mail::to($user->email)->send(new ResetPasswordOtpMail($otp));
             } catch (\Throwable $e) {
-                \Log::error('Gagal mengirim email reset OTP: ' . $e->getMessage());
+                \Log::error('Gagal mengirim email reset OTP ke ' . $email . ': ' . $e->getMessage());
             }
         }
 
@@ -278,18 +281,27 @@ class AuthController extends Controller
         ]);
 
         $email = trim(strtolower($request->email));
-        $cacheKey = 'reset_otp_' . md5($email);
-        $cached = Cache::get($cacheKey);
 
-        if (!$cached) {
+        $record = \DB::table('password_reset_tokens')->where('email', $email)->first();
+
+        if (!$record) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kode verifikasi telah kedaluwarsa atau belum diminta. Silakan minta kode baru.',
             ], 422);
         }
 
+        // Cek masa berlaku token akses (5 menit)
+        if (\Carbon\Carbon::parse($record->created_at)->addMinutes(5)->isPast()) {
+            \DB::table('password_reset_tokens')->where('email', $email)->delete();
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode verifikasi telah kedaluwarsa (lebih dari 5 menit). Silakan minta kode baru.',
+            ], 422);
+        }
+
         // Verifikasi OTP
-        if (!Hash::check((string) $request->otp, $cached['otp'])) {
+        if (!Hash::check((string) $request->otp, $record->token)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Kode verifikasi OTP yang dimasukkan salah.',
@@ -297,10 +309,9 @@ class AuthController extends Controller
         }
 
         // Hapus token sekali pakai langsung setelah verifikasi berhasil
-        Cache::forget($cacheKey);
-        Cache::forget('reset_cooldown_' . md5($email));
+        \DB::table('password_reset_tokens')->where('email', $email)->delete();
 
-        $user = User::find($cached['user_id']);
+        $user = User::where('email', $email)->first();
         if (!$user) {
             return response()->json([
                 'success' => false,
