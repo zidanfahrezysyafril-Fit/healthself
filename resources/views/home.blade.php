@@ -448,7 +448,7 @@
             @foreach($artikels as $artikel)
             <a href="{{ route('artikel.show', $artikel) }}" class="group block bg-gray-50 rounded-[2rem] overflow-hidden border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div style="height:200px; overflow:hidden;">
-                    <img src="{{ $artikel->thumbnailUrl() }}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.4s;" class="group-hover:scale-105" alt="{{ $artikel->judul }}">
+                    <img src="{{ $artikel->thumbnailUrl() }}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.4s;" class="group-hover:scale-105" alt="{{ $artikel->judul }}" onerror="this.src='https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=800&auto=format&fit=crop'; this.onerror=null;">
                 </div>
                 <div class="p-7">
                     <div class="flex items-center gap-2 mb-3">
