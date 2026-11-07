@@ -328,6 +328,106 @@
             margin-top: 4px;
         }
 
+        /* MODAL POPUP */
+        .modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 16px;
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 440px;
+            border-radius: 20px;
+            padding: 30px 26px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            position: relative;
+            animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px) scale(0.96); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 18px;
+            background: #f3f4f6;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1;
+        }
+        .modal-close:hover {
+            background: #e5e7eb;
+            color: #111;
+        }
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            background: #fef2f2;
+            border: 1.5px solid #fee2e2;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #111827;
+            margin: 0 0 6px;
+        }
+        .modal-subtitle {
+            font-size: 0.825rem;
+            color: #6b7280;
+            margin: 0;
+            line-height: 1.4;
+        }
+        .modal-alert {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin-bottom: 16px;
+            text-align: left;
+            line-height: 1.4;
+        }
+        .modal-alert.error {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+        .modal-alert.success {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            color: #166534;
+        }
+
         @media (max-width: 960px) {
             .login-wrapper { flex-direction: column; background: #fff; }
             .login-left { display: none; }
@@ -382,12 +482,14 @@
             <p class="login-subtitle">Masuk ke akun Anda untuk mulai</p>
 
             {{-- SUCCESS / ERROR ALERT --}}
-            @if(session('success'))
-                <div class="alert-success">✓ {{ session('success') }}</div>
-            @endif
-            @if(session('error'))
-                <div class="alert-error">⚠ {{ session('error') }}</div>
-            @endif
+            <div id="login-alert-container">
+                @if(session('success'))
+                    <div class="alert-success">✓ {{ session('success') }}</div>
+                @endif
+                @if(session('error'))
+                    <div class="alert-error">⚠ {{ session('error') }}</div>
+                @endif
+            </div>
 
             {{-- GOOGLE LOGIN --}}
             <a href="{{ route('auth.google') }}" class="btn-google" id="btn-google">
@@ -455,6 +557,7 @@
                         <input type="checkbox" name="remember" style="accent-color:#800000;">
                         Ingat saya
                     </label>
+                    <a href="javascript:void(0)" onclick="openForgotModal()" class="forgot-link">Lupa kata sandi?</a>
                 </div>
 
                 {{-- RECAPTCHA --}}
@@ -486,7 +589,330 @@
     </div>
 </div>
 
+{{-- POPUP MODAL LUPA PASSWORD --}}
+<div class="modal-backdrop" id="forgot-modal" style="display:none;" onclick="handleBackdropClick(event)">
+    <div class="modal-card">
+        <button type="button" class="modal-close" onclick="closeForgotModal()">&times;</button>
+        
+        <div class="modal-header">
+            <div class="modal-icon">🔑</div>
+            <h3 class="modal-title">Atur Ulang Kata Sandi</h3>
+            <p class="modal-subtitle">Ikuti langkah berikut untuk mengamankan kembali akun Anda</p>
+        </div>
+
+        {{-- ALERT MODAL --}}
+        <div id="modal-alert" style="display:none;" class="modal-alert"></div>
+
+        {{-- STEP 1: INPUT EMAIL --}}
+        <div id="forgot-step-1">
+            <div class="form-group" style="text-align:left;">
+                <label class="form-label" for="forgot-email">Alamat Email Terdaftar</label>
+                <input 
+                    type="email" 
+                    id="forgot-email" 
+                    class="form-input" 
+                    placeholder="nama@email.com" 
+                    autocomplete="email"
+                >
+                <p style="font-size:0.75rem; color:#6b7280; margin-top:6px; line-height:1.4;">
+                    Kami akan mengirimkan kode verifikasi (OTP) 6 digit sekali pakai ke email Anda.
+                </p>
+            </div>
+
+            <button type="button" class="btn-submit" id="btn-send-otp" onclick="submitSendOtp()">
+                Kirim Kode Verifikasi
+            </button>
+        </div>
+
+        {{-- STEP 2: INPUT OTP & PASSWORD BARU --}}
+        <div id="forgot-step-2" style="display:none;">
+            <div style="background:#fef2f2; border:1px solid #fee2e2; border-radius:10px; padding:10px 14px; margin-bottom:16px; font-size:0.8rem; color:#991b1b; text-align:left; line-height:1.4;">
+                Kode verifikasi telah dikirim ke <strong id="step2-email-display"></strong>. Kode berlaku selama <strong>5 menit</strong>.
+            </div>
+
+            <div class="form-group" style="text-align:left;">
+                <label class="form-label" for="reset-otp">Kode OTP (6 Digit)</label>
+                <input 
+                    type="text" 
+                    id="reset-otp" 
+                    class="form-input" 
+                    placeholder="Contoh: 123456" 
+                    maxlength="6"
+                    style="letter-spacing: 5px; font-weight:700; text-align:center; font-size:1.15rem;"
+                >
+            </div>
+
+            <div class="form-group" style="text-align:left;">
+                <label class="form-label" for="reset-password">Kata Sandi Baru</label>
+                <div class="password-container">
+                    <input 
+                        type="password" 
+                        id="reset-password" 
+                        class="form-input" 
+                        placeholder="Minimal 8 karakter"
+                        style="padding-right: 48px;"
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword('reset-password', this)">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-group" style="text-align:left;">
+                <label class="form-label" for="reset-password-confirmation">Konfirmasi Kata Sandi Baru</label>
+                <div class="password-container">
+                    <input 
+                        type="password" 
+                        id="reset-password-confirmation" 
+                        class="form-input" 
+                        placeholder="Ulangi kata sandi baru"
+                        style="padding-right: 48px;"
+                    >
+                    <button type="button" class="password-toggle" onclick="togglePassword('reset-password-confirmation', this)">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <button type="button" class="btn-submit" id="btn-submit-reset" onclick="submitResetPassword()">
+                Simpan Kata Sandi Baru
+            </button>
+
+            <div style="margin-top:14px; display:flex; justify-content:space-between; align-items:center; font-size:0.8rem;">
+                <button type="button" id="btn-resend-otp" onclick="resendOtp()" style="background:none; border:none; color:#800000; font-weight:700; cursor:pointer; padding:0;">
+                    Kirim ulang kode
+                </button>
+                <button type="button" onclick="goToStep1()" style="background:none; border:none; color:#6b7280; cursor:pointer; padding:0;">
+                    ← Ganti email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+    const csrfToken = '{{ csrf_token() }}';
+
+    // MODAL LUPA PASSWORD LOGIC
+    let currentForgotEmail = '';
+
+    function openForgotModal() {
+        const modal = document.getElementById('forgot-modal');
+        const emailVal = document.getElementById('email').value.trim();
+        if (emailVal) {
+            document.getElementById('forgot-email').value = emailVal;
+        }
+        hideModalAlert();
+        goToStep1();
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => document.getElementById('forgot-email').focus(), 100);
+    }
+
+    function closeForgotModal() {
+        const modal = document.getElementById('forgot-modal');
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+        hideModalAlert();
+    }
+
+    function handleBackdropClick(e) {
+        if (e.target.id === 'forgot-modal') {
+            closeForgotModal();
+        }
+    }
+
+    function showModalAlert(type, message) {
+        const alertBox = document.getElementById('modal-alert');
+        alertBox.className = 'modal-alert ' + type;
+        alertBox.innerHTML = (type === 'error' ? '⚠ ' : '✓ ') + message;
+        alertBox.style.display = 'block';
+    }
+
+    function hideModalAlert() {
+        const alertBox = document.getElementById('modal-alert');
+        alertBox.style.display = 'none';
+        alertBox.innerHTML = '';
+    }
+
+    function goToStep1() {
+        document.getElementById('forgot-step-1').style.display = 'block';
+        document.getElementById('forgot-step-2').style.display = 'none';
+        hideModalAlert();
+    }
+
+    function goToStep2(email) {
+        currentForgotEmail = email;
+        document.getElementById('forgot-step-1').style.display = 'none';
+        document.getElementById('forgot-step-2').style.display = 'block';
+        document.getElementById('step2-email-display').textContent = email;
+        document.getElementById('reset-otp').value = '';
+        document.getElementById('reset-password').value = '';
+        document.getElementById('reset-password-confirmation').value = '';
+        hideModalAlert();
+        setTimeout(() => document.getElementById('reset-otp').focus(), 100);
+    }
+
+    async function submitSendOtp() {
+        const emailInput = document.getElementById('forgot-email');
+        const email = emailInput.value.trim();
+        const btn = document.getElementById('btn-send-otp');
+
+        if (!email) {
+            showModalAlert('error', 'Silakan masukkan alamat email Anda.');
+            emailInput.focus();
+            return;
+        }
+
+        btn.disabled = true;
+        const origText = btn.textContent;
+        btn.textContent = 'Mengirim kode...';
+        hideModalAlert();
+
+        try {
+            const res = await fetch(`{{ route('password.sendOtp') }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ email: email })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                goToStep2(email);
+            } else {
+                showModalAlert('error', data.message || 'Terjadi kesalahan saat mengirim kode.');
+            }
+        } catch (err) {
+            showModalAlert('error', 'Gagal terhubung ke server. Silakan coba lagi.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = origText;
+        }
+    }
+
+    async function resendOtp() {
+        const btn = document.getElementById('btn-resend-otp');
+        if (!currentForgotEmail) return;
+
+        btn.disabled = true;
+        btn.textContent = 'Mengirim...';
+        hideModalAlert();
+
+        try {
+            const res = await fetch(`{{ route('password.sendOtp') }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({ email: currentForgotEmail })
+            });
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showModalAlert('success', 'Kode verifikasi baru telah dikirimkan ke email Anda.');
+            } else {
+                showModalAlert('error', data.message || 'Gagal mengirim ulang kode.');
+            }
+        } catch(e) {
+            showModalAlert('error', 'Gagal menghubungi server.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Kirim ulang kode';
+        }
+    }
+
+    async function submitResetPassword() {
+        const otp = document.getElementById('reset-otp').value.trim();
+        const password = document.getElementById('reset-password').value;
+        const password_confirmation = document.getElementById('reset-password-confirmation').value;
+        const btn = document.getElementById('btn-submit-reset');
+
+        if (!otp || otp.length !== 6) {
+            showModalAlert('error', 'Masukkan 6 digit kode OTP verifikasi.');
+            document.getElementById('reset-otp').focus();
+            return;
+        }
+        if (!password || password.length < 8) {
+            showModalAlert('error', 'Kata sandi baru minimal harus 8 karakter.');
+            document.getElementById('reset-password').focus();
+            return;
+        }
+        if (password !== password_confirmation) {
+            showModalAlert('error', 'Konfirmasi kata sandi tidak cocok.');
+            document.getElementById('reset-password-confirmation').focus();
+            return;
+        }
+
+        btn.disabled = true;
+        const origText = btn.textContent;
+        btn.textContent = 'Menyimpan kata sandi...';
+        hideModalAlert();
+
+        try {
+            const res = await fetch(`{{ route('password.reset') }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify({
+                    email: currentForgotEmail,
+                    otp: otp,
+                    password: password,
+                    password_confirmation: password_confirmation
+                })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                // Tutup popup modal
+                closeForgotModal();
+
+                // Isi otomatis email ke form login
+                const mainEmailInput = document.getElementById('email');
+                if (mainEmailInput) {
+                    mainEmailInput.value = currentForgotEmail;
+                }
+
+                // Kosongkan password di form login dan fokus
+                const mainPasswordInput = document.getElementById('password');
+                if (mainPasswordInput) {
+                    mainPasswordInput.value = '';
+                    mainPasswordInput.focus();
+                }
+
+                // Tampilkan banner notifikasi sukses di halaman login
+                const alertContainer = document.getElementById('login-alert-container');
+                if (alertContainer) {
+                    alertContainer.innerHTML = `
+                        <div class="alert-success" style="animation: slideUp 0.3s ease;">
+                            ✓ ${data.message}
+                        </div>
+                    `;
+                }
+
+                // Scroll halus ke form login jika di mobile
+                document.querySelector('.form-card')?.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                showModalAlert('error', data.message || 'Gagal mengatur ulang kata sandi.');
+            }
+        } catch(err) {
+            showModalAlert('error', 'Terjadi kesalahan sistem. Silakan coba lagi.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = origText;
+        }
+    }
+
     // COUNTDOWN TIMER (Realtime)
     let countdownInterval = null;
     let secondsLeft = {{ session('locked_seconds', 0) }};

@@ -10,13 +10,14 @@ use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OtpMail;
+use App\Mail\ResetPasswordOtpMail;
 use App\Models\User;
 use App\Models\LoginAttempt;
 
 class AuthController extends Controller
 {
     const MAX_ATTEMPTS = 5;
-    const LOCK_MINUTES = 15;
+    const LOCK_SECONDS = 40;
 
     public function showLogin()
     {
@@ -143,7 +144,7 @@ class AuthController extends Controller
         if ($attempt->isLocked() || $ipAttempt->isLocked()) {
             $secs = max($attempt->secondsRemaining(), $ipAttempt->secondsRemaining());
             return back()->withErrors([
-                'email' => 'Akun terkunci. Coba lagi dalam ' . ceil($secs / 60) . ' menit.',
+                'email' => 'Akun terkunci sementara. Coba lagi dalam ' . $secs . ' detik.',
             ])->with('locked_seconds', $secs)->withInput($request->only('email'));
         }
 
@@ -175,24 +176,163 @@ class AuthController extends Controller
 
         // Gagal – tambah attempt
         $newCount = $attempt->attempts + 1;
-        $lockedUntil = $newCount >= self::MAX_ATTEMPTS ? now()->addMinutes(self::LOCK_MINUTES) : null;
+        $lockedUntil = $newCount >= self::MAX_ATTEMPTS ? now()->addSeconds(self::LOCK_SECONDS) : null;
         $attempt->update(['attempts' => $newCount, 'locked_until' => $lockedUntil]);
 
         $ipNew = $ipAttempt->attempts + 1;
-        $ipLocked = $ipNew >= self::MAX_ATTEMPTS ? now()->addMinutes(self::LOCK_MINUTES) : null;
+        $ipLocked = $ipNew >= self::MAX_ATTEMPTS ? now()->addSeconds(self::LOCK_SECONDS) : null;
         $ipAttempt->update(['attempts' => $ipNew, 'locked_until' => $ipLocked]);
 
         $remaining = self::MAX_ATTEMPTS - $newCount;
 
         if ($lockedUntil) {
             return back()->withErrors([
-                'email' => 'Terlalu banyak percobaan. Akun terkunci selama ' . self::LOCK_MINUTES . ' menit.',
-            ])->with('locked_seconds', self::LOCK_MINUTES * 60)->withInput($request->only('email'));
+                'email' => 'Terlalu banyak percobaan gagal. Akun terkunci sementara selama ' . self::LOCK_SECONDS . ' detik.',
+            ])->with('locked_seconds', self::LOCK_SECONDS)->withInput($request->only('email'));
         }
 
         return back()->withErrors([
             'email' => 'Username dan password salah. Sisa percobaan: ' . max(0, $remaining),
         ])->withInput($request->only('email'));
+    }
+
+    /**
+     * Kirim OTP untuk Atur Ulang Kata Sandi
+     * Memenuhi prinsip keamanan:
+     * - Jangan izinkan upaya menebak ID login (pesan seragam)
+     * - Rate limiting / cooldown brute force
+     * - Token sekali pakai dengan masa berlaku (5 menit)
+     */
+    public function sendResetOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email'    => 'Format email tidak valid.',
+        ]);
+
+        $email = trim(strtolower($request->email));
+        $cacheKey = 'reset_otp_' . md5($email);
+        $cooldownKey = 'reset_cooldown_' . md5($email);
+
+        // Cek cooldown pengiriman OTP (40 detik antar request)
+        if (Cache::has($cooldownKey)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Permintaan terlalu cepat. Tunggu beberapa saat sebelum meminta kode baru.',
+            ], 429);
+        }
+
+        $user = User::where('email', $email)->first();
+
+        // Jika user terdaftar, buat OTP acak 6 digit dan kirim email
+        if ($user) {
+            $otp = (string) random_int(100000, 999999);
+
+            // Simpan hash OTP di cache selama 5 menit
+            Cache::put($cacheKey, [
+                'user_id' => $user->id,
+                'otp'     => Hash::make($otp),
+            ], now()->addMinutes(5));
+
+            // Set cooldown 40 detik
+            Cache::put($cooldownKey, true, now()->addSeconds(40));
+
+            try {
+                Mail::to($user->email)->send(new ResetPasswordOtpMail($otp));
+            } catch (\Throwable $e) {
+                \Log::error('Gagal mengirim email reset OTP: ' . $e->getMessage());
+            }
+        }
+
+        // Pesan seragam untuk mencegah identitas pengguna ditebak (User Enumeration Defense)
+        return response()->json([
+            'success' => true,
+            'message' => 'Jika email Anda terdaftar, kode verifikasi 6 digit telah dikirimkan ke email Anda. Silakan cek inbox/spam.',
+            'email'   => $email,
+        ]);
+    }
+
+    /**
+     * Verifikasi OTP dan Atur Ulang Kata Sandi Baru
+     * Memenuhi prinsip keamanan:
+     * - Kebijakan password konsisten (min 8 karakter, confirmed)
+     * - Batalkan semua sesi yang ada setelah reset berhasil
+     * - Token sekali pakai (langsung dihapus setelah verifikasi)
+     * - Strong hashing (Hash::make / Bcrypt)
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email'                 => 'required|email',
+            'otp'                   => 'required|numeric|digits:6',
+            'password'              => 'required|string|min:8|confirmed',
+        ], [
+            'email.required'        => 'Email wajib diisi.',
+            'otp.required'          => 'Kode verifikasi OTP wajib diisi.',
+            'otp.digits'            => 'Kode verifikasi OTP harus terdiri dari 6 digit.',
+            'password.required'     => 'Kata sandi baru wajib diisi.',
+            'password.min'          => 'Kata sandi baru minimal harus 8 karakter.',
+            'password.confirmed'    => 'Konfirmasi kata sandi tidak cocok.',
+        ]);
+
+        $email = trim(strtolower($request->email));
+        $cacheKey = 'reset_otp_' . md5($email);
+        $cached = Cache::get($cacheKey);
+
+        if (!$cached) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode verifikasi telah kedaluwarsa atau belum diminta. Silakan minta kode baru.',
+            ], 422);
+        }
+
+        // Verifikasi OTP
+        if (!Hash::check((string) $request->otp, $cached['otp'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode verifikasi OTP yang dimasukkan salah.',
+            ], 422);
+        }
+
+        // Hapus token sekali pakai langsung setelah verifikasi berhasil
+        Cache::forget($cacheKey);
+        Cache::forget('reset_cooldown_' . md5($email));
+
+        $user = User::find($cached['user_id']);
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengguna tidak ditemukan.',
+            ], 404);
+        }
+
+        // Update password dengan hashing yang kuat
+        $user->password = Hash::make($request->password);
+        // Batalkan sesi yang ada: regenerate remember token
+        $user->setRememberToken(\Illuminate\Support\Str::random(60));
+        $user->save();
+
+        // Batalkan sesi di database jika tabel sessions digunakan
+        try {
+            \DB::table('sessions')->where('user_id', $user->id)->delete();
+        } catch (\Throwable $e) {}
+
+        // Invalidate sesi aktif saat ini
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        // Reset hitungan percobaan gagal pada email dan IP ini
+        LoginAttempt::where('identifier', $email)
+            ->orWhere('identifier', $request->ip())
+            ->update(['attempts' => 0, 'locked_until' => null]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Kata sandi berhasil diatur ulang! Silakan masuk dengan kata sandi baru Anda.',
+        ]);
     }
 
     public function redirectToGoogle()

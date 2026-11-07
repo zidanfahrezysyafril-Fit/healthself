@@ -42,6 +42,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('register.post');
     Route::get('/auth/google',          [AuthController::class, 'redirectToGoogle'])->name('auth.google');
     Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
+    
+    // Lupa Password (Popup / OTP Based)
+    Route::post('/forgot-password/send-otp', [AuthController::class, 'sendResetOtp'])->middleware('throttle:5,1')->name('password.sendOtp');
+    Route::post('/forgot-password/reset',    [AuthController::class, 'resetPassword'])->middleware('throttle:5,1')->name('password.reset');
 });
 
 Route::post('/logout',  [AuthController::class, 'logout'])->middleware('auth')->name('logout');
