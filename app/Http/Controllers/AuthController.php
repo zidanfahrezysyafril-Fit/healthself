@@ -69,8 +69,14 @@ class AuthController extends Controller
 
     private function sendOtp(User $user)
     {
-        $otp = rand(100000, 999999);
-        Cache::put('otp_' . $user->id, $otp, now()->addMinutes(3));
+        $otp = (string) random_int(100000, 999999);
+        \DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => 'register_' . $user->id],
+            [
+                'token'      => Hash::make($otp),
+                'created_at' => now(),
+            ]
+        );
         Mail::to($user->email)->send(new OtpMail($otp));
     }
 
@@ -87,18 +93,24 @@ class AuthController extends Controller
         $request->validate(['otp_code' => 'required|numeric|digits:6']);
         $user = Auth::user();
 
-        $cachedOtp = Cache::get('otp_' . $user->id);
+        $record = \DB::table('password_reset_tokens')->where('email', 'register_' . $user->id)->first();
 
-        if (!$cachedOtp) {
-            return back()->with('error', 'Kode OTP telah kedaluwarsa. Silakan minta ulang.');
+        if (!$record) {
+            return back()->with('error', 'Kode OTP telah kedaluwarsa atau belum diminta. Silakan klik "Kirim Ulang".');
         }
 
-        if ($cachedOtp != $request->otp_code) {
-            return back()->with('error', 'Kode OTP salah.');
+        // Berlaku selama 5 menit
+        if (\Carbon\Carbon::parse($record->created_at)->addMinutes(5)->isPast()) {
+            \DB::table('password_reset_tokens')->where('email', 'register_' . $user->id)->delete();
+            return back()->with('error', 'Kode OTP telah kedaluwarsa (lebih dari 5 menit). Silakan klik "Kirim Ulang".');
         }
 
-        // Valid
-        Cache::forget('otp_' . $user->id);
+        if (!Hash::check((string) $request->otp_code, $record->token)) {
+            return back()->with('error', 'Kode OTP yang dimasukkan salah.');
+        }
+
+        // Valid - hapus token sekali pakai
+        \DB::table('password_reset_tokens')->where('email', 'register_' . $user->id)->delete();
         $user->update(['email_verified_at' => now()]);
 
         Auth::logout();
