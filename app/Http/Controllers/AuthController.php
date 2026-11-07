@@ -82,9 +82,17 @@ class AuthController extends Controller
 
     public function showOtpForm()
     {
-        if (Auth::user()->email_verified_at) {
-            return $this->redirectByRole(Auth::user());
+        $user = Auth::user();
+        if ($user->email_verified_at) {
+            return $this->redirectByRole($user);
         }
+
+        // Cek apakah sudah ada token OTP yang masih aktif di database
+        $record = \DB::table('password_reset_tokens')->where('email', 'register_' . $user->id)->first();
+        if (!$record || abs(now()->diffInMinutes(\Carbon\Carbon::parse($record->created_at))) > 15) {
+            $this->sendOtp($user);
+        }
+
         return view('auth.otp');
     }
 
@@ -99,10 +107,10 @@ class AuthController extends Controller
             return back()->with('error', 'Kode OTP telah kedaluwarsa atau belum diminta. Silakan klik "Kirim Ulang".');
         }
 
-        // Berlaku selama 5 menit
-        if (\Carbon\Carbon::parse($record->created_at)->addMinutes(5)->isPast()) {
+        // Berlaku selama 15 menit
+        if (abs(now()->diffInMinutes(\Carbon\Carbon::parse($record->created_at))) > 15) {
             \DB::table('password_reset_tokens')->where('email', 'register_' . $user->id)->delete();
-            return back()->with('error', 'Kode OTP telah kedaluwarsa (lebih dari 5 menit). Silakan klik "Kirim Ulang".');
+            return back()->with('error', 'Kode OTP telah kedaluwarsa (lebih dari 15 menit). Silakan klik "Kirim Ulang".');
         }
 
         if (!Hash::check((string) $request->otp_code, $record->token)) {

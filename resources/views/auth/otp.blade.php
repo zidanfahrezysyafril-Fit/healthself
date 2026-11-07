@@ -27,7 +27,7 @@
 
 <div class="card">
     <h1 class="title">Verifikasi Email ✉️</h1>
-    <p class="subtitle">Kami telah mengirimkan 6 digit kode OTP ke email <strong>{{ auth()->user()->email }}</strong>. Kode berlaku selama 5 menit.</p>
+    <p class="subtitle">Kami telah mengirimkan 6 digit kode OTP ke email <strong>{{ auth()->user()->email }}</strong>. Kode berlaku selama 15 menit.</p>
 
     @if(session('success'))
         <div class="alert alert-success">✓ {{ session('success') }}</div>
