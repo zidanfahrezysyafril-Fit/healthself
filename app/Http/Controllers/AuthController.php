@@ -246,6 +246,10 @@ class AuthController extends Controller
                 Mail::to($user->email)->send(new ResetPasswordOtpMail($otp));
             } catch (\Throwable $e) {
                 \Log::error('Gagal mengirim email reset OTP ke ' . $email . ': ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengirim email verifikasi: ' . $e->getMessage(),
+                ], 500);
             }
         }
 
