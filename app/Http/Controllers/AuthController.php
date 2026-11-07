@@ -218,11 +218,12 @@ class AuthController extends Controller
         // Cek cooldown 40 detik antar permintaan dari database
         $existing = \DB::table('password_reset_tokens')->where('email', $email)->first();
         if ($existing && $existing->created_at) {
-            $secondsSince = now()->diffInSeconds(\Carbon\Carbon::parse($existing->created_at));
+            $secondsSince = abs(now()->diffInSeconds(\Carbon\Carbon::parse($existing->created_at)));
             if ($secondsSince < 40) {
+                $wait = 40 - (int) $secondsSince;
                 return response()->json([
                     'success' => false,
-                    'message' => 'Permintaan terlalu cepat. Tunggu ' . (40 - $secondsSince) . ' detik sebelum meminta kode baru.',
+                    'message' => "Permintaan terlalu cepat. Tunggu {$wait} detik sebelum meminta kode baru.",
                 ], 429);
             }
         }
