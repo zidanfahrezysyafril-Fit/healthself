@@ -21,16 +21,18 @@ $app->useBootstrapPath($_ENV['APP_BOOTSTRAP'] ?? '/tmp/bootstrap');
 // Create required directories in /tmp
 $storagePath = $app->storagePath();
 $bootstrapPath = $app->bootstrapPath();
-foreach ([
-    "{$storagePath}/app/public", 
-    "{$storagePath}/framework/views", 
-    "{$storagePath}/framework/cache/data", 
-    "{$storagePath}/framework/sessions", 
-    "{$storagePath}/logs",
-    "{$bootstrapPath}/cache"
-] as $dir) {
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0777, true);
+if (!is_dir("{$storagePath}/framework/views")) {
+    foreach ([
+        "{$storagePath}/app/public", 
+        "{$storagePath}/framework/views", 
+        "{$storagePath}/framework/cache/data", 
+        "{$storagePath}/framework/sessions", 
+        "{$storagePath}/logs",
+        "{$bootstrapPath}/cache"
+    ] as $dir) {
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0777, true);
+        }
     }
 }
 
