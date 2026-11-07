@@ -52,9 +52,20 @@ class Artikel extends Model
     public function thumbnailUrl(): string
     {
         if ($this->thumbnail) {
-            return str_starts_with($this->thumbnail, 'http')
-                ? $this->thumbnail
-                : asset('storage/' . $this->thumbnail);
+            // Jika sudah URL lengkap (http/https), langsung pakai
+            if (str_starts_with($this->thumbnail, 'http')) {
+                return $this->thumbnail;
+            }
+            // Jika disimpan di Supabase Storage (via S3 disk)
+            if (env('SUPABASE_STORAGE_URL')) {
+                $bucket  = env('SUPABASE_STORAGE_BUCKET', 'thumbnails');
+                $baseUrl = rtrim(env('SUPABASE_STORAGE_URL'), '/');
+                // Hapus prefix 'thumbnails/' dari path lama agar tidak double
+                $path = preg_replace('/^thumbnails\//', '', $this->thumbnail);
+                return "{$baseUrl}/object/public/{$bucket}/{$path}";
+            }
+            // Fallback ke local storage
+            return asset('storage/' . $this->thumbnail);
         }
         return 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=800&auto=format&fit=crop';
     }

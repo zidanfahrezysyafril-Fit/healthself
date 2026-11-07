@@ -43,8 +43,15 @@ class ArtikelKonselorController extends Controller
         ]);
 
         if ($request->hasFile('thumbnail')) {
-            $path = $request->file('thumbnail')->store('thumbnails', 'public');
-            $data['thumbnail'] = $path;
+            $file = $request->file('thumbnail');
+            $filename = $file->hashName();
+            if (env('SUPABASE_STORAGE_URL')) {
+                \Storage::disk('supabase')->putFileAs('', $file, $filename, 'public');
+            } else {
+                \Storage::disk('public')->putFileAs('thumbnails', $file, $filename);
+                $filename = 'thumbnails/' . $filename;
+            }
+            $data['thumbnail'] = $filename;
         }
 
         $data['id_user']        = auth()->id();
